@@ -1,8 +1,36 @@
-//Server detail, store in env
+/** @constant {string}
+    @default
+*/
 const url = "192.168.0.111";
+
+/** @constant {string}
+    @default
+*/
 const port = "3000";
 
-//Create new user
+/**
+ * Callback function to set the tokens state.
+ * @callback setTokens
+ */
+/**
+ * Callback function to set the watchlist state.
+ * @callback setData
+ */
+
+/**
+ * Sends the data input by the
+ * user to the backend to register
+ * a new user.
+ * @param {Object} newDetails -
+ * Data to be sent to the api.
+ * @param {string} newDetails.username -
+ *  Username to be sent to the api
+ *  for registration.
+ * @param {string} newDetails.password -
+ *  Password to be sent to the api
+ *  for registration.
+ * @returns {boolean} - Success or failure
+ */
 export const signUp = async (newDetails) => {
   // console.log(newDetails);
   if (
@@ -32,11 +60,24 @@ export const signUp = async (newDetails) => {
   } catch (e) {
     console.log(e);
   }
-  //Enable to login after signup for testing.
-  // login(newDetails);
 };
 
-//Log into existing account
+/**
+ * Sends the data input by the
+ * user to log into their account.
+ * @param {Object} details -
+ * Data to be sent to the api.
+ * @param {string} details.username -
+ *  Username to be sent to the api
+ *  for logging in.
+ * @param {string} details.password -
+ *  Password to be sent to the api
+ *  for logging in.
+ * @param {setTokens} setTokens -
+ *  Set tokens state to the new tokens
+ *  sent by the backend.
+ * @returns {boolean} - Success or failure
+ */
 export const login = async (details, setTokens, data, setData) => {
   if (
     details.username == undefined ||
@@ -77,8 +118,13 @@ export const login = async (details, setTokens, data, setData) => {
   }
 };
 
-//Invalidate refreshkey in server and remove data from app
-export const logout = async (refreshToken, setData) => {
+/**
+ * Sends the refresh token to
+ * the backend to invalidate it.
+ * @param {string} refreshToken -
+ *  Refresh token of the current user.
+ */
+export const logout = async (refreshToken, setTokens, setData) => {
   try {
     // console.log({ refreshToken: tokens.refreshToken });
     const response = await fetch(`http://${url}:${port}/logout`, {
@@ -100,7 +146,19 @@ export const logout = async (refreshToken, setData) => {
   });
 };
 
-//Refresh expired access token
+/**
+ * Refresh access token in case
+ * of expiration.
+ * @param {Object} tokens -
+ *  State which contains the access
+ *  token and the refresh token of
+ *  the current user.
+ * @param {setTokens} setTokens -
+ *  Set tokens state to the new tokens
+ *  sent by the backend.
+ * @returns {string} - New access token
+ *  received from the backend.
+ */
 export const refreshAccessToken = async (tokens, setTokens) => {
   const refreshResponse = await fetch(`http://${url}:${port}/refreshToken`, {
     method: "POST",
@@ -125,7 +183,21 @@ export const refreshAccessToken = async (tokens, setTokens) => {
   }
 };
 
-//Fetch watchlist from server
+/**
+ * Fetch the watchlist of the
+ * current user from the database.
+ * @param {Object} tokens -
+ *  State which contains the access
+ *  token and the refresh token of
+ *  the current user.
+ * @param {setTokens} setTokens -
+ *  Set tokens state to the new tokens
+ *  sent by the backend.
+ * @param {setData} setData -
+ *  Set watchlist state to the new
+ *  data received from the backend.
+ * @returns {boolean} - Success or failure
+ */
 export const getWatchlist = async (tokens, setTokens, data, setData) => {
   try {
     const response = await fetch(`http://${url}:${port}/watchlist`, {
@@ -164,7 +236,20 @@ export const getWatchlist = async (tokens, setTokens, data, setData) => {
   }
 };
 
-//Update watchlist on server
+/**
+ * Update the watchlist stored in
+ * the database.
+ * @param {string} inputData -
+ *  New watchlist which contains the
+ *  newly added stock symbol.
+ * @param {Object} tokens -
+ *  State which contains the access
+ *  token and the refresh token of
+ *  the current user.
+ * @param {setTokens} setTokens -
+ *  Set tokens state to the new tokens
+ *  sent by the backend.
+ */
 export const setWatchlist = async (inputData, tokens, setTokens) => {
   // console.log(JSON.stringify({ watchlist: inputData.watchlist }));
   try {
@@ -205,6 +290,4 @@ export const setWatchlist = async (inputData, tokens, setTokens) => {
   } catch (e) {
     console.log(e);
   }
-  //Enable to fetch after set for testing.
-  // getWatchlist();
 };

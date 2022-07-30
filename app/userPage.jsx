@@ -28,12 +28,6 @@ export default function UserPage() {
     password: "",
     watchlist: "",
   });
-  // : {
-  //   id: null,
-  //   username: null,
-  //   password: null,
-  //   watchlist: null,
-  // }
 
   const usernameInputChange = (username) => {
     setInputData({
@@ -139,7 +133,7 @@ export default function UserPage() {
           <Pressable
             style={[
               {
-                backgroundColor: "#3af",
+                backgroundColor: "#3df",
               },
               styles.pressable,
             ]}
@@ -165,7 +159,7 @@ export default function UserPage() {
           <Pressable
             style={[
               {
-                backgroundColor: "#6fb",
+                backgroundColor: "#6c6",
               },
               styles.pressable,
             ]}
@@ -183,7 +177,7 @@ export default function UserPage() {
               styles.pressable,
             ]}
             onPress={() => {
-              logout(tokens.refreshToken, setData);
+              logout(tokens.refreshToken, setTokens, setData);
             }}
           >
             <Text>Logout</Text>

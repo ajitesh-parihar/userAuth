@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 // const {JWT_SECRET} = require('../keys');
 const mysql = require("mysql");
 const uuid = require("uuid");
+const e = require("express");
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -22,11 +23,31 @@ const pool = mysql.createPool({
   database: "nodejs",
 });
 
+/**
+ *
+ * @param {Object} user -
+ *  Object to be signed with the
+ *  access token.
+ * @param {string} user.name -
+ *  Name of the user.
+ * @returns {string} -
+ *  Newly signed access token.
+ */
 const createToken = (user) => {
   //Change expiry to a longer period after testing
   return jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: "10s" });
 };
 
+/**
+ *
+ * @param {e.Request} req -
+ *  Contains the access token to validate.
+ * @param {e.Response} res -
+ *  Send response.
+ * @param {e.NextFunction} next -
+ *  Continue after validation.
+ * @returns
+ */
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -38,6 +59,27 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+/**
+ * /watchlist:
+ *   post:
+ *     summary: Retrieve the watchlist of the user.
+ *     requestHeader:
+ *       required: true
+ *       content:
+ *         name: Authorization
+ *         value: Bearer $accessToken
+ *     responses:
+ *       200:
+ *         description: Respond with the watchlist.
+ *         content:
+ *           html/text:
+ *              type: string
+ *              example: "BIDU,GOOG"
+ *       401:
+ *         description: Unauthorized.
+ *       403:
+ *         description: Forbidden.
+ */
 app.post("/watchlist", authenticateToken, (req, res) => {
   pool.getConnection(async (err, connection) => {
     connection.query(
@@ -56,6 +98,34 @@ app.post("/watchlist", authenticateToken, (req, res) => {
   });
 });
 
+/**
+ * /updateWatchlist:
+ *   post:
+ *     summary: Update the watchlist stored in the database.
+ *    requestHeader:
+ *       required: true
+ *       content:
+ *         name: Authorization
+ *         value: Bearer $accessToken
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               watchlist:
+ *                 type: string
+ *                 description: Watchlist sent by the user.
+ *                 example: "BIDU,GOOG"
+ *     responses:
+ *       200:
+ *         description: Result of signup request.
+ *         content:
+ *           html/text:
+ *              type: string
+ *              example: Success
+ */
 app.post("/updateWatchlist", authenticateToken, (req, res) => {
   // console.log(req.body);
   pool.getConnection((err, connection) => {
@@ -81,6 +151,33 @@ app.post("/updateWatchlist", authenticateToken, (req, res) => {
   });
 });
 
+/**
+ * /signup:
+ *   post:
+ *     summary: Add a new user to the database.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The user's name.
+ *                 example: pizza@localhost.com
+ *               password:
+ *                 type: string
+ *                 description: The user' password.
+ *                 example: we128!@3u!jds
+ *     responses:
+ *       200:
+ *         description: Result of signup request.
+ *         content:
+ *           html/text:
+ *              type: string
+ *              example: Success | Duplicate
+ */
 app.post("/signup", (req, res) => {
   console.log(req.body);
   pool.getConnection(async (err, connection) => {
@@ -125,6 +222,42 @@ app.post("/signup", (req, res) => {
   });
 });
 
+/**
+ * /login:
+ *   post:
+ *     summary: Log in to an existing account.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The user's name.
+ *                 example: pizza@localhost.com
+ *               password:
+ *                 type: string
+ *                 description: The user' password.
+ *                 example: we128!@3u!jds
+ *     responses:
+ *       200:
+ *         description: Result of login request.
+ *         content:
+ *           application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               accessToken:
+ *                 type: string
+ *                 description: New access token.
+ *               RefreshToken:
+ *                 type: string
+ *                 description: New refresh token.
+ *       401:
+ *         description: Unauthorized.
+ */
 app.post("/login", (req, res) => {
   pool.getConnection((err, connection) => {
     if (err) {
@@ -193,6 +326,36 @@ app.post("/login", (req, res) => {
   });
 });
 
+/**
+ * /refreshToken:
+ *   post:
+ *     summary: Create new access token for the user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Refresh token of the user.
+ *     responses:
+ *       200:
+ *         description: Respond with the new access token.
+ *         content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               accessToken:
+ *                 type: string
+ *                 description: New access token.
+ *       401:
+ *         description: Unauthorized.
+ *       403:
+ *         description: Forbidden.
+ */
 app.post("/refreshToken", (req, res) => {
   // console.log(req.body);
   pool.getConnection((err, connection) => {
@@ -237,6 +400,27 @@ app.post("/refreshToken", (req, res) => {
   });
 });
 
+/**
+ * /logout:
+ *   post:
+ *     summary: Delete user's refresh token from the database.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Refresh token of the user.
+ *     responses:
+ *       204:
+ *         description: Respond with success or failure.
+ *         content:
+ *           html/text:
+ *              type: string
+ */
 app.delete("/logout", (req, res) => {
   // console.log(req.body);
   pool.getConnection((err, connection) => {
@@ -277,6 +461,32 @@ app.get("/", (req, res) => {
     });
     connection.release();
   });
+});
+
+app.get("/games", async (req, res) => {
+  const clientID = "94rki842n43yqh0lxkuzomhw7d8onn";
+  const accessToken = "lzz8ubusq9t6nu2wjw20thbk44d8r7";
+  const url = "https://api.igdb.com/v4/games";
+  try {
+    console.log(req.body.name);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: new Headers({
+        Accept: "application/json",
+        // "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        "Client-ID": clientID,
+        "Access-Control-Allow-Origin": "*",
+      }),
+      body: `fields name;
+      limit 10;
+      search "${req.body.name}";`,
+    });
+    const result = await response.json();
+    console.log(result);
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 app.post("/drop", (req, res) => {
